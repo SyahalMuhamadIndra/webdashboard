@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#232935" />
+<title>Pusat Laporan Outlet — Simaung Corporation</title>
+<meta name="description" content="Pusat laporan hasil seluruh outlet: omzet, laba, margin, dan temuan yang perlu dipertanyakan. Ringkasan bulanan dan tahunan." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23232935'/%3E%3Cpath d='M5 18h14M8 18v-6h3v6M14 18V8h3v10' stroke='%23F26A1B' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/outlet-dashboard.css" />
+</head>
+<body>
+
+<!-- ============================ TOPBAR ============================ -->
+<nav class="topbar" aria-label="Navigasi utama">
+  <div class="wrap">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#232935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 20h18"/><path d="M6 20V10h4v10"/><path d="M14 20V5h4v15"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">Pusat Laporan Outlet</div>
+        <div class="brand-sub">Simaung Corporation</div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <span class="tb-meta"><b>DEMO</b> · data dummy</span>
+      <button type="button" class="tb-btn" id="btn-exit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 6 5 12l6 6"/><path d="M5 12h14"/></svg>
+        <span>Kembali ke Login</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================= HERO ============================= -->
+<header class="hero">
+  <div class="grid-overlay" aria-hidden="true"></div>
+  <div class="orb o1" aria-hidden="true"></div>
+  <div class="orb o2" aria-hidden="true"></div>
+
+  <div class="wrap hero-inner">
+    <span class="eyebrow on-dark">DEMO · SELURUH ANGKA ADALAH DATA DUMMY</span>
+    <h1>Hasil semua outlet,<br><span class="grad">dalam satu layar.</span></h1>
+    <p class="sub">Arsip penjualan, operasional aktif, dan arsip historis dalam satu halaman. Tiap sumber dibaca terpisah dan tidak saling dijumlahkan.</p>
+
+    <div class="kpi-grid" id="hero-kpi" aria-live="polite">
+      <div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div><p>Menghitung ringkasan…</p></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================ FILTER ============================ -->
+<div class="controls-bar">
+  <div class="wrap">
+    <section class="controls" aria-label="Filter laporan">
+      <div class="ctrl-group">
+        <span class="ctrl-label" id="periode-mode">Periode</span>
+        <div class="seg" role="tablist" aria-labelledby="periode-mode" id="mode-seg">
+          <button class="seg-btn is-active" data-mode="month" role="tab" aria-selected="true">Bulanan</button>
+          <button class="seg-btn" data-mode="year" role="tab" aria-selected="false">Tahunan</button>
+        </div>
+      </div>
+
+      <div class="ctrl-group" id="month-ctrl">
+        <label for="sel-month">Bulan</label>
+        <select id="sel-month"><option value="11" data-year="2026">November 2026</option><option value="10" data-year="2026">Oktober 2026</option><option value="9" data-year="2026">September 2026</option><option value="8" data-year="2026">Agustus 2026</option><option value="7" data-year="2026">Juli 2026</option><option value="6" data-year="2026">Juni 2026</option><option value="5" data-year="2026">Mei 2026</option><option value="4" data-year="2026">April 2026</option><option value="3" data-year="2026">Maret 2026</option><option value="2" data-year="2026">Februari 2026</option><option value="1" data-year="2026">Januari 2026</option></select>
+      </div>
+
+      <div class="ctrl-group" id="year-ctrl" hidden>
+        <label for="sel-year">Tahun</label>
+        <select id="sel-year">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+        </select>
+      </div>
+
+      <div class="ctrl-group ctrl-outlets">
+        <label for="sel-outlet">Outlet</label>
+        <select id="sel-outlet">
+          <option value="all">Semua outlet</option>
+          <option value="sikecut-manis">Sikecut Manis</option><option value="mitra-kost">Mitra Kost</option><option value="cherry-bakes-house">Cherry Bakes House</option><option value="maja-koffie">Maja Koffie</option><option value="mitra-water">Mitra Water</option><option value="rm-sindang-hurip">RM Sindang Hurip</option><option value="river-inn">River Inn</option><option value="sweet-escape">Sweet Escape</option><option value="tk-kartini">Toko Kartini</option>
+        </select>
+      </div>
+
+      <div class="ctrl-group ctrl-blocks">
+        <span class="ctrl-label">Tampilan data</span>
+        <div class="ctrl-block-btns">
+          <button id="btn-expand-all" class="btn-ghost" type="button" title="Tampilkan data ketiga bagian">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/><path d="M6 15l6 6 6-6"/></svg>
+            Buka semua
+          </button>
+          <button id="btn-collapse-all" class="btn-ghost" type="button" title="Sembunyikan data ketiga bagian">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6-6 6 6"/><path d="M6 15l6 6 6-6"/></svg>
+            Tutup semua
+          </button>
+        </div>
+      </div>
+
+      <div class="ctrl-group ctrl-refresh">
+        <button id="btn-refresh" class="btn-ghost" type="button" title="Muat ulang data">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+          Muat ulang
+        </button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- ============================= MAIN ============================= -->
+<main class="page">
+  <div class="wrap">
+
+    <section id="root" class="report" aria-live="polite"></section>
+
+    <!-- baris alat bantu: analisis -->
+    <section class="insight-row" aria-label="Alat bantu analisis">
+      <article class="panel panel-ai" aria-labelledby="ttl-ai">
+        <header class="panel-head">
+          <div class="panel-head-main">
+            <span class="panel-ico panel-ico-accent">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3Z"/><path d="M17.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></svg>
+            </span>
+            <div>
+              <h2 class="panel-title" id="ttl-ai">Analisis Gemini</h2>
+              <p class="panel-sub">Analisis gabungan tiga sumber pada periode dan outlet terpilih.</p>
+            </div>
+          </div>
+        </header>
+        <div class="panel-body panel-ai-body">
+          <p class="ai-copy">Baca fakta terukur dari operasional aktif, arsip penjualan dan arsip historis, plus keterbatasan datanya. Analisis tidak menggantikan bukti transaksi.</p>
+          <button id="owner-ai" class="btn-ai" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4L12 3Z"/></svg>
+            Lihat contoh analisis
+          </button>
+          <div id="owner-ai-result" class="ai-result" role="status" aria-live="polite"></div>
+        </div>
+      </article>
+    </section>
+
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Tiga sumber ditampilkan terpisah · tidak saling dijumlahkan · bukan data real-time</span>
+    <span>Simulasi demonstrasi · tidak membaca atau mengubah data produksi</span>
+  </div>
+</footer>
+
+<script src="/static/dashboard.js"></script>
+<script src="/static/screen.js"></script>
+</body>
+</html>
