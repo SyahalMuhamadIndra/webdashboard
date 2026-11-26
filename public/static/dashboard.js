@@ -199,8 +199,6 @@
     ],
   };
 
-  const monthsFor = (s) => (s.mode === 'month' ? [s.year + '-' + pad(s.month)] : monthsOfYear(s.year));
-
   /* codes: daftar slug outlet · months: daftar 'YYYY-MM' · revenueTotal: omzet blok */
   function bestseller(codes, months, revenueTotal, seedTag) {
     const stats = new Map();
@@ -737,19 +735,6 @@
               'penjualan harian',
             ),
           ),
-      ) +
-      panel(
-        'olsera-bestseller',
-        'Best Seller',
-        'Produk paling laku pada arsip ini. Omzet produk dibagi dari neto blok ini saja, tidak dijumlahkan dengan sumber lain.',
-        bestSellerMarkup(
-          bestseller(
-            Array.from(new Set(d.batches.map((b) => b.code))),
-            Array.from(new Set(d.batches.map((b) => b.month))),
-            d.totals.netRevenue,
-            'olsera-bs',
-          ),
-        ),
       ) +
       panel(
         'olsera-methods',
@@ -1330,9 +1315,8 @@
     const bodyHtml =
       '<div class="ex-toolbar"><span>' + badge('DEMO · Data dummy', 'neutral') + ' Dihitung ' + esc(dt(d.calculatedAt)) + '</span>' +
       '<div><button class="btn-ghost" id="live-csv">Ekspor CSV</button> <button class="btn-ghost" id="live-print">Cetak / PDF</button></div></div>' +
-      '<nav class="ex-nav" aria-label="Bagian laporan"><a href="#ex-performance">Kinerja outlet</a><a href="#ex-bestseller">Best seller</a><a href="#ex-finance">Keuangan</a><a href="#ex-alerts">Peringatan</a><a href="#ex-quality">Kualitas data</a></nav>' +
+      '<nav class="ex-nav" aria-label="Bagian laporan"><a href="#ex-performance">Kinerja outlet</a><a href="#ex-finance">Keuangan</a><a href="#ex-alerts">Peringatan</a><a href="#ex-quality">Kualitas data</a></nav>' +
       panel('ex-performance', 'Kinerja per Outlet', '*Periode berjalan dibanding tanggal kalender setara sebelumnya; periode selesai dibanding satu periode penuh. Angka target dan pencapaian target tidak ditampilkan pada halaman ini.', performance) +
-      panel('ex-bestseller', 'Best Seller', 'Produk paling laku pada POS aktif. Omzet produk dibagi dari omzet blok ini saja, tidak dijumlahkan dengan sumber lain.', bestSellerMarkup(bestseller(d.outlets.map((o) => o.slug), monthsFor(s), t.actual, 'live-bs'))) +
       panel('ex-finance', 'Keuangan yang Dapat Ditelusuri', '*Laba kotor belum dikurangi gaji, sewa dan beban lainnya. Angka settlement bukan saldo rekening.', finance + '<p class="ex-note">Saldo kas/bank langsung dan proyeksi kewajiban pemasok belum tersedia. Angka tersebut tidak diestimasi dari omzet.</p>') +
       panel('ex-alerts', 'Peringatan &amp; Tindak Lanjut', 'Peringatan berasal dari angka dan kondisi yang terukur. Penugasan dicatat terpisah dari halaman laporan.', alerts + '<h3>Tugas &amp; Penanggung Jawab</h3>' + actions) +
       panel('ex-quality', 'Kelengkapan &amp; Sumber Data', 'Aktivitas terakhir bukan jaminan seluruh transaksi sudah terkirim. Status koneksi outlet tidak disimpulkan dari tidak adanya transaksi.', quality + '<ul>' + d.limitations.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>') +

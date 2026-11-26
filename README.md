@@ -60,6 +60,31 @@ Detail perilaku:
 - Bukti nota per outlet, ekspor CSV per blok, tombol layar penuh (`screen.js`), toast "Kembali ke Login"
 - Mendukung query string `?mode=month|year&month=..&year=..` untuk state awal
 
+### Point Best Seller (satu saja)
+
+Hanya ada **satu** point Best Seller di seluruh halaman:
+
+| Blok | ID point | Posisi |
+|---|---|---|
+| Arsip Historis | `hist-bestseller` (`sec:hist-bestseller`) | setelah "Perlu dipertanyakan", sebelum blok Kontribusi/Tren |
+
+Isi: **3 kartu peringkat** (emas/perak/perunggu) + baris ringkasan + **tabel peringkat lengkap** (Peringkat · Produk · Kategori · Terjual · Omzet · Kontribusi). Point ini bisa dibuka/ditutup seperti grup lain di Arsip Historis.
+
+**Aturan angka**: omzet produk dibagi ke produk dengan bobot popularitas deterministik, lalu totalnya **dipaksa persis sama** dengan omzet blok itu sendiri (selisih pembulatan dimasukkan ke produk teratas), sehingga omzet produk tidak pernah dicampur antar sumber.
+
+Best Seller **tidak** dipasang di blok Operasional Aktif maupun Arsip Penjualan (keduanya sudah dihapus, termasuk pintasan "Best seller" di menu navigasi Operasional Aktif).
+
+## Catatan Layout: Tabel Kontribusi vs Kartu Tren
+
+Tabel **Kontribusi per outlet** (7 kolom) di Arsip Historis pernah menembus batas kolom dan menimpa kartu **Tren** di sebelahnya. Penyebab dan perbaikannya:
+
+| Penyebab | Perbaikan |
+|---|---|
+| `.panel-clip` memakai `display:grid` **tanpa** `grid-template-columns`, sehingga kolomnya berukuran `auto` (selebar konten) dan tabel lebar melebarkan kolom melewati batas. | Ditambah `grid-template-columns:minmax(0,1fr)` dan `.panel-clip-inner{min-width:0}`. |
+| `.split` memakai `1.3fr 1fr`; minimum `auto` pada `fr` juga membuat kolom bisa melebihi jatah. | Diganti `minmax(0,1.3fr) minmax(0,1fr)`; `.split > div{min-width:0}`, dan satu kolom di ≤1024px. |
+
+Catatan: `overflow:hidden` **tidak** dipakai pada `.split > div`, karena mematikan `thead` sticky di dalam `.tbl-wrap`.
+
 ## Ringkasan URI
 
 | Metode | Path | Keterangan |
