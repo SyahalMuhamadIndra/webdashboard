@@ -1184,21 +1184,6 @@
         'Hal yang sebaiknya Bapak/Ibu tanyakan ke tim sebelum ambil keputusan',
         '<div class="panel"><div class="ask-list">' + asksHTML + '</div></div>',
       ) +
-      secBlock(
-        'hist-bestseller',
-        'Best Seller',
-        'Produk paling laku pada arsip historis. Omzet produk dibagi dari neto blok ini saja, tidak dijumlahkan dengan sumber lain.',
-        '<div class="panel"><div class="panel-body">' +
-          bestSellerMarkup(
-            bestseller(
-              d.rows.map((r) => r.id),
-              Array.from(new Set(d.rows.flatMap((r) => r.detailWeeks.map((w) => w.start.slice(0, 7))))),
-              t.omzet,
-              'hist-bs',
-            ),
-          ) +
-          '</div></div>',
-      ) +
       '<div class="split" style="margin-top:26px"><div>' +
       secBlock(
         'hist-contrib',
@@ -1239,6 +1224,51 @@
               ...d.rows.map((r) => [r.name, r.category, r.omzet, r.laba ?? '', r.margin ?? '', r.weeks]),
             ]);
         const pr = block.querySelector('#hist-print');
+        if (pr) pr.onclick = () => window.print();
+      },
+    };
+  }
+
+  /* ========================= RENDER: BEST SELLER ========================== */
+  /* Blok/point tersendiri di luar ketiga blok sumber. Angkanya dibagi dari
+     neto Arsip Historis pada cakupan yang sama, dan tidak dijumlahkan dengan
+     blok lain mana pun. */
+  function renderBestseller(s) {
+    const d = historyData(s);
+    if (!d.rows.length) {
+      return {
+        tag: 'Produk · belum ada data',
+        data: null,
+        kpi: '',
+        body:
+          '<div class="ex-toolbar"><span class="pill neutral">BEST SELLER</span></div>' +
+          '<p class="ex-note">Belum ada arsip pada cakupan ini.</p>' +
+          '<div class="panel"><div class="panel-body"><div class="empty-ok">Belum ada produk terjual pada cakupan ini.<br><span style="font-size:12px">Pilih periode atau outlet lain yang sudah diimpor.</span></div></div></div>',
+        mount: null,
+      };
+    }
+    const t = d.totals;
+    const months = Array.from(new Set(d.rows.flatMap((r) => r.detailWeeks.map((w) => w.start.slice(0, 7)))));
+    const bs = bestseller(d.rows.map((r) => r.id), months, t.omzet, 'bs-block');
+
+    return {
+      tag: 'Produk · ' + bs.list.length,
+      data: { ...bs, period: d.period, outlets: d.rows.length, coverage: d.importedMonths + '/' + d.expectedMonths },
+      kpi: '',
+      body:
+        '<div class="ex-toolbar"><span class="pill neutral">BEST SELLER · ' + esc(d.period.label) + '</span>' +
+        '<div><button class="btn-ghost" id="bs-csv">Ekspor CSV</button> <button class="btn-ghost" id="bs-print">Cetak / PDF</button></div></div>' +
+        '<p class="ex-note">Produk paling laku dari <b>' + d.rows.length + ' outlet</b>. Omzet produk dibagi dari neto Arsip Historis pada cakupan ini saja — tidak dijumlahkan dengan Operasional Aktif atau Arsip Penjualan.</p>' +
+        '<div class="panel"><div class="panel-body">' + bestSellerMarkup(bs) + '</div></div>',
+      mount: (block) => {
+        const csv = block.querySelector('#bs-csv');
+        if (csv)
+          csv.onclick = () =>
+            exportRowsCSV('Simaung-BestSeller-' + s.year + (s.mode === 'month' ? '-' + s.month : ''), [
+              ['Peringkat', 'Produk', 'Kategori', 'Harga', 'Terjual', 'Omzet', 'Kontribusi'],
+              ...bs.list.map((r) => [r.rank, r.name, r.cat, r.price, r.qty, r.revenue, pct(r.share)]),
+            ]);
+        const pr = block.querySelector('#bs-print');
         if (pr) pr.onclick = () => window.print();
       },
     };
@@ -1510,14 +1540,14 @@
 
   /* ---------------------- komposisi satu halaman (3 blok) ------------------ */
   /* status buka/tutup tiap blok, disimpan agar tidak hilang saat filter diganti */
-  const BLOCK_IDS = ['live', 'olsera', 'history'];
+  const BLOCK_IDS = ['live', 'olsera', 'history', 'bs'];
   const COLLAPSE_KEY = 'simaung-collapsed-blocks';
   const collapsed = (() => {
     try {
       const raw = JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}');
-      return { live: !!raw.live, olsera: !!raw.olsera, history: !!raw.history };
+      return { live: !!raw.live, olsera: !!raw.olsera, history: !!raw.history, bs: !!raw.bs };
     } catch (e) {
-      return { live: false, olsera: false, history: false };
+      return { live: false, olsera: false, history: false, bs: false };
     }
   })();
 
@@ -1684,6 +1714,11 @@
       sub: 'Arsip laporan unggahan 19 November 2026 untuk 7 outlet. Tidak dijumlahkan dengan sumber lain.',
       cols: 4,
     },
+    bs: {
+      title: 'Best Seller',
+      sub: 'Produk paling laku dari arsip yang sudah diimpor. Angka produk dibagi dari neto arsip itu sendiri, tidak dijumlahkan dengan sumber lain.',
+      cols: 4,
+    },
   };
 
   function load() {
@@ -1696,6 +1731,7 @@
     const live = renderLive(s);
     const olsera = renderOlsera(s);
     const history = renderHistory(s);
+    const bs = renderBestseller(s);
 
     heroKpi.innerHTML = heroSummary(live.data, olsera.data, history.data);
 
@@ -1710,12 +1746,14 @@
       history: H.rows.length
         ? compact(H.totals.omzet) + ' omzet · margin ' + pct(H.totals.margin) + ' · ' + H.rows.length + ' outlet'
         : 'Belum ada arsip pada cakupan ini',
+      bs: bs.data ? bs.data.list.length + ' produk · ' + compact(bs.data.total) + ' omzet' : 'Belum ada produk',
     };
 
     root.innerHTML = [
       srcBlock({ id: 'live', ...BLOCK_META.live, tag: live.tag, kpi: live.kpi, body: live.body, summary: summaries.live }),
       srcBlock({ id: 'olsera', ...BLOCK_META.olsera, tag: olsera.tag, kpi: olsera.kpi, body: olsera.body, summary: summaries.olsera }),
       srcBlock({ id: 'history', ...BLOCK_META.history, tag: history.tag, kpi: history.kpi, body: history.body, summary: summaries.history }),
+      srcBlock({ id: 'bs', ...BLOCK_META.bs, tag: bs.tag, kpi: bs.kpi, body: bs.body, summary: summaries.bs }),
     ].join('');
 
     /* klik judul blok = buka/tutup; tombol eksplisit tetap tersedia */
@@ -1752,6 +1790,7 @@
       ['live', live],
       ['olsera', olsera],
       ['history', history],
+      ['bs', bs],
     ].forEach(([id, r]) => {
       const block = root.querySelector('#src-' + id);
       if (block && r.mount) r.mount(block);

@@ -1,6 +1,6 @@
 # Pusat Laporan Outlet — Simaung Corporation
 
-Rebuild 1:1 halaman **"Pusat Laporan Outlet — Simaung Corporation"**, dengan tambahan mekanisme **buka/tutup (close up / close in)** pada setiap poin di dalam tiga blok utama: **Arsip Penjualan**, **Operasional Aktif**, dan **Arsip Historis**.
+Rebuild 1:1 halaman **"Pusat Laporan Outlet — Simaung Corporation"**, dengan tambahan mekanisme **buka/tutup (close up / close in)** pada setiap poin di dalam tiga blok sumber (**Arsip Penjualan**, **Operasional Aktif**, **Arsip Historis**) ditambah satu blok tersendiri **Best Seller**.
 
 ## Ringkasan Proyek
 
@@ -35,7 +35,7 @@ ecosystem.config.cjs   # PM2 config (wrangler pages dev, port 3000)
 
 | Tingkat | Yang bisa diklik | Perilaku |
 |---|---|---|
-| 1 | Judul blok sumber (**Arsip Penjualan**, **Operasional Aktif**, **Arsip Historis**) | Membuka/menutup seluruh isi blok |
+| 1 | Judul blok (**Operasional Aktif**, **Arsip Penjualan**, **Arsip Historis**, **Best Seller**) | Membuka/menutup seluruh isi blok |
 | 2 | Judul poin/panel di dalam blok (**Kinerja per Outlet**, **Keuangan yang Dapat Ditelusuri**, **Peringatan & Tindak Lanjut**, **Kelengkapan & Sumber Data**, **Kasir Harian**, **Asal Data & Riwayat Impor**, **Pencocokan Angka**, **Kasir/Penjual per Hari**, **Penjualan Harian Sumber**, **Metode pada Nota Sumber**) | Membuka/menutup poin tersebut saja |
 | 3 | Judul grup di **Arsip Historis** (**Perlu dipertanyakan**, **Kontribusi per outlet**, **Tren mingguan/bulanan**, **Rincian mingguan per outlet**) | Membuka/menutup grup beserta tabel/grafiknya |
 
@@ -60,19 +60,21 @@ Detail perilaku:
 - Bukti nota per outlet, ekspor CSV per blok, tombol layar penuh (`screen.js`), toast "Kembali ke Login"
 - Mendukung query string `?mode=month|year&month=..&year=..` untuk state awal
 
-### Point Best Seller (satu saja)
+### Best Seller — blok tersendiri
 
-Hanya ada **satu** point Best Seller di seluruh halaman:
+Best Seller adalah **blok ke-4 yang berdiri sendiri**, di luar Operasional Aktif, Arsip Penjualan, dan Arsip Historis.
 
-| Blok | ID point | Posisi |
+| Blok | ID blok | Render |
 |---|---|---|
-| Arsip Historis | `hist-bestseller` (`sec:hist-bestseller`) | setelah "Perlu dipertanyakan", sebelum blok Kontribusi/Tren |
+| Best Seller | `src-bs` | `renderBestseller(s)` |
 
-Isi: **3 kartu peringkat** (emas/perak/perunggu) + baris ringkasan + **tabel peringkat lengkap** (Peringkat · Produk · Kategori · Terjual · Omzet · Kontribusi). Point ini bisa dibuka/ditutup seperti grup lain di Arsip Historis.
+Isi: **3 kartu peringkat** (emas/perak/perunggu) + baris ringkasan + **tabel peringkat lengkap** (Peringkat · Produk · Kategori · Terjual · Omzet · Kontribusi), plus **Ekspor CSV** dan **Cetak / PDF**.
 
-**Aturan angka**: omzet produk dibagi ke produk dengan bobot popularitas deterministik, lalu totalnya **dipaksa persis sama** dengan omzet blok itu sendiri (selisih pembulatan dimasukkan ke produk teratas), sehingga omzet produk tidak pernah dicampur antar sumber.
+Blok ini bisa dibuka/ditutup seperti blok lain (klik judul atau tombol Buka/Tutup), ikut terhitung di **Buka semua / Tutup semua** (4 blok), dan statusnya tersimpan di `localStorage` (`simaung-collapsed-blocks`).
 
-Best Seller **tidak** dipasang di blok Operasional Aktif maupun Arsip Penjualan (keduanya sudah dihapus, termasuk pintasan "Best seller" di menu navigasi Operasional Aktif).
+**Aturan angka**: omzet produk dibagi ke produk dengan bobot popularitas deterministik, lalu totalnya **dipaksa persis sama** dengan neto Arsip Historis pada cakupan yang sama (selisih pembulatan dimasukkan ke produk teratas). Jadi omzet produk tidak pernah dijumlahkan dengan blok lain.
+
+Best Seller **tidak** lagi berada di dalam Arsip Historis, dan tidak dipasang di Operasional Aktif maupun Arsip Penjualan.
 
 ## Catatan Layout: Tabel Kontribusi vs Kartu Tren
 
@@ -112,6 +114,8 @@ pm2 start ecosystem.config.cjs   # http://localhost:3000
 | `/static/dashboard.js` | 200 · 76.576 byte |
 | `/api/health` | `{"ok":true,"app":"Pusat Laporan Outlet",...}` |
 | Uji klik (jsdom) | Tutup/buka **Kinerja per Outlet** & **Keuangan** ✓ · grup Arsip Historis ✓ · Tutup semua 3/3 blok + 10/10 poin + 4/4 grup ✓ · Buka semua ✓ · state tersimpan ✓ |
+| Tombol Tutup/Buka semua | kini mencakup **4 blok** (`BLOCK_IDS = ['live','olsera','history','bs']`) |
+| Blok Best Seller (diukur di DOM, viewport 1280px) | blok = `[src-live, src-olsera, src-history, src-bs]` · `bsDiDalamArsipHistoris = 0` · 3 kartu · 24 baris tabel · 1 ringkasan · buka/tutup blok berfungsi ✓ |
 | Playwright | Tanpa error console |
 
 ## Belum Diimplementasi
