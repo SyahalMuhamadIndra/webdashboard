@@ -152,6 +152,159 @@
   };
   const badge = (label, tone) => '<span class="pill ' + (tone || 'neutral') + '">' + esc(label) + '</span>';
 
+  /* ==========================================================================
+     BEST SELLER
+     Omzet sebuah blok dibagi ke produk memakai bobot popularitas deterministik,
+     sehingga jumlah omzet semua produk = omzet blok itu sendiri (tidak pernah
+     mencampur angka dengan sumber lain).
+     ========================================================================== */
+  const PRODUCTS = {
+    fnb: [
+      ['Kopi Susu Gula Aren', 24000],
+      ['Americano', 20000],
+      ['Cappuccino', 26000],
+      ['Matcha Latte', 28000],
+      ['Croissant Butter', 22000],
+      ['Cinnamon Roll', 21000],
+      ['Cheesecake Slice', 32000],
+      ['Nasi Goreng Spesial', 35000],
+      ['Ayam Geprek', 28000],
+      ['Es Teh Manis', 8000],
+    ],
+    retail: [
+      ['Air Mineral 600 ml', 4000],
+      ['Galon Isi Ulang', 18000],
+      ['Beras 5 kg', 68000],
+      ['Minyak Goreng 2 L', 36000],
+      ['Gula Pasir 1 kg', 16000],
+      ['Telur Ayam 1 kg', 29000],
+      ['Sabun Cuci 800 ml', 24000],
+      ['Kopi Sachet', 3000],
+    ],
+    penginapan: [
+      ['Kamar Deluxe', 420000],
+      ['Kamar Superior', 350000],
+      ['Kamar Family', 620000],
+      ['Extra Bed', 90000],
+      ['Sarapan Tambahan', 45000],
+      ['Laundry Kiloan', 15000],
+    ],
+    kosan: [
+      ['Sewa Kamar Bulanan', 1250000],
+      ['Sewa Mingguan', 350000],
+      ['Deposit Kamar', 500000],
+      ['Listrik Token', 60000],
+      ['Laundry Kiloan', 15000],
+      ['Air Galon', 20000],
+    ],
+  };
+
+  const monthsFor = (s) => (s.mode === 'month' ? [s.year + '-' + pad(s.month)] : monthsOfYear(s.year));
+
+  /* codes: daftar slug outlet · months: daftar 'YYYY-MM' · revenueTotal: omzet blok */
+  function bestseller(codes, months, revenueTotal, seedTag) {
+    const stats = new Map();
+    codes.forEach((code) => {
+      const u = unitOf(code);
+      const catalog = PRODUCTS[u.unit] || PRODUCTS.fnb;
+      months.forEach((ym) => {
+        const rnd = mulberry32(seedOf('bs|' + (seedTag || '') + '|' + code + '|' + ym));
+        catalog.forEach(([name, price]) => {
+          const key = name;
+          const rec = stats.get(key) || { name, price, cat: labels[u.unit], weight: 0 };
+          rec.weight += 0.4 + rnd() * 1.3;
+          stats.set(key, rec);
+        });
+      });
+    });
+
+    const all = Array.from(stats.values()).sort((a, b) => b.weight - a.weight);
+    const weightSum = all.reduce((a, r) => a + r.weight, 0) || 1;
+    const list = all.map((r, i) => {
+      const share = r.weight / weightSum;
+      const revenue = Math.round((revenueTotal * share) / 1000) * 1000;
+      return {
+        rank: i + 1,
+        name: r.name,
+        price: r.price,
+        cat: r.cat,
+        share,
+        revenue,
+        qty: r.price ? Math.round(revenue / r.price) : 0,
+      };
+    });
+    /* pastikan total persis = omzet blok (selisih pembulatan masuk ke produk teratas) */
+    const sum = list.reduce((a, r) => a + r.revenue, 0);
+    if (list.length && sum !== revenueTotal) list[0].revenue += revenueTotal - sum;
+
+    return { list, total: revenueTotal };
+  }
+
+  function bestSellerMarkup(data) {
+    if (!data || !data.list.length) return '<div class="empty-ok">Belum ada produk terjual pada cakupan ini.</div>';
+    const top = data.list.slice(0, 3);
+    const leader = top[0].revenue || 1;
+
+    const cards = top
+      .map(
+        (r, i) =>
+          '<article class="bs-card bs-' +
+          (i + 1) +
+          '">' +
+          '<span class="bs-medal" aria-hidden="true">' +
+          (i + 1) +
+          '</span>' +
+          '<div class="bs-name">' +
+          esc(r.name) +
+          '</div>' +
+          '<div class="bs-cat">' +
+          esc(r.cat) +
+          ' · ' +
+          rp(r.price) +
+          '</div>' +
+          '<div class="bs-rev">' +
+          compact(r.revenue) +
+          '</div>' +
+          '<div class="bs-meter"><span style="width:' +
+          Math.max(4, (r.revenue / leader) * 100).toFixed(1) +
+          '%"></span></div>' +
+          '<div class="bs-meta"><b>' +
+          nf.format(r.qty) +
+          '</b> terjual · ' +
+          pct(r.share) +
+          ' omzet</div>' +
+          '</article>',
+      )
+      .join('');
+
+    /* table() menerima ARRAY baris, bukan string yang sudah di-join. */
+    const rows = data.list.map((r) =>
+      row([
+        '<span class="bs-rank">' + r.rank + '</span>',
+        '<b>' + esc(r.name) + '</b>',
+        esc(r.cat),
+        nf.format(r.qty),
+        rp(r.revenue),
+        pct(r.share),
+      ]),
+    );
+
+    return (
+      '<div class="bs-top">' +
+      cards +
+      '</div>' +
+      '<div class="bs-summary">' +
+      '<span>Total ' +
+      data.list.length +
+      ' produk · omzet <b>' +
+      compact(data.total) +
+      '</b></span>' +
+      '<span class="bs-note">Dibagi dari omzet blok ini saja, bukan dari sumber lain</span>' +
+      '</div>' +
+      table(['Peringkat', 'Produk', 'Kategori', 'Terjual', 'Omzet', 'Kontribusi'], rows)
+    );
+  }
+
   /* ---- empat kartu ringkasan keuangan: Gross -> Net -> Beban -> Laba ------ */
   const finCards = ({ gross, net, beban, laba, notes }) => {
     const n = notes || {};
@@ -584,6 +737,19 @@
               'penjualan harian',
             ),
           ),
+      ) +
+      panel(
+        'olsera-bestseller',
+        'Best Seller',
+        'Produk paling laku pada arsip ini. Omzet produk dibagi dari neto blok ini saja, tidak dijumlahkan dengan sumber lain.',
+        bestSellerMarkup(
+          bestseller(
+            Array.from(new Set(d.batches.map((b) => b.code))),
+            Array.from(new Set(d.batches.map((b) => b.month))),
+            d.totals.netRevenue,
+            'olsera-bs',
+          ),
+        ),
       ) +
       panel(
         'olsera-methods',
@@ -1033,6 +1199,21 @@
         'Hal yang sebaiknya Bapak/Ibu tanyakan ke tim sebelum ambil keputusan',
         '<div class="panel"><div class="ask-list">' + asksHTML + '</div></div>',
       ) +
+      secBlock(
+        'hist-bestseller',
+        'Best Seller',
+        'Produk paling laku pada arsip historis. Omzet produk dibagi dari neto blok ini saja, tidak dijumlahkan dengan sumber lain.',
+        '<div class="panel"><div class="panel-body">' +
+          bestSellerMarkup(
+            bestseller(
+              d.rows.map((r) => r.id),
+              Array.from(new Set(d.rows.flatMap((r) => r.detailWeeks.map((w) => w.start.slice(0, 7))))),
+              t.omzet,
+              'hist-bs',
+            ),
+          ) +
+          '</div></div>',
+      ) +
       '<div class="split" style="margin-top:26px"><div>' +
       secBlock(
         'hist-contrib',
@@ -1149,8 +1330,9 @@
     const bodyHtml =
       '<div class="ex-toolbar"><span>' + badge('DEMO · Data dummy', 'neutral') + ' Dihitung ' + esc(dt(d.calculatedAt)) + '</span>' +
       '<div><button class="btn-ghost" id="live-csv">Ekspor CSV</button> <button class="btn-ghost" id="live-print">Cetak / PDF</button></div></div>' +
-      '<nav class="ex-nav" aria-label="Bagian laporan"><a href="#ex-performance">Kinerja outlet</a><a href="#ex-finance">Keuangan</a><a href="#ex-alerts">Peringatan</a><a href="#ex-quality">Kualitas data</a></nav>' +
+      '<nav class="ex-nav" aria-label="Bagian laporan"><a href="#ex-performance">Kinerja outlet</a><a href="#ex-bestseller">Best seller</a><a href="#ex-finance">Keuangan</a><a href="#ex-alerts">Peringatan</a><a href="#ex-quality">Kualitas data</a></nav>' +
       panel('ex-performance', 'Kinerja per Outlet', '*Periode berjalan dibanding tanggal kalender setara sebelumnya; periode selesai dibanding satu periode penuh. Angka target dan pencapaian target tidak ditampilkan pada halaman ini.', performance) +
+      panel('ex-bestseller', 'Best Seller', 'Produk paling laku pada POS aktif. Omzet produk dibagi dari omzet blok ini saja, tidak dijumlahkan dengan sumber lain.', bestSellerMarkup(bestseller(d.outlets.map((o) => o.slug), monthsFor(s), t.actual, 'live-bs'))) +
       panel('ex-finance', 'Keuangan yang Dapat Ditelusuri', '*Laba kotor belum dikurangi gaji, sewa dan beban lainnya. Angka settlement bukan saldo rekening.', finance + '<p class="ex-note">Saldo kas/bank langsung dan proyeksi kewajiban pemasok belum tersedia. Angka tersebut tidak diestimasi dari omzet.</p>') +
       panel('ex-alerts', 'Peringatan &amp; Tindak Lanjut', 'Peringatan berasal dari angka dan kondisi yang terukur. Penugasan dicatat terpisah dari halaman laporan.', alerts + '<h3>Tugas &amp; Penanggung Jawab</h3>' + actions) +
       panel('ex-quality', 'Kelengkapan &amp; Sumber Data', 'Aktivitas terakhir bukan jaminan seluruh transaksi sudah terkirim. Status koneksi outlet tidak disimpulkan dari tidak adanya transaksi.', quality + '<ul>' + d.limitations.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>') +
